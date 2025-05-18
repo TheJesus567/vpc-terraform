@@ -4,7 +4,7 @@ variable "cidr" {
   description = "CIDR block for the VPC. Defines the range of private IP addresses available for resources within the VPC"
 }
 
-variable "public_subnet_cidr" {
+variable "public_subnet" {
   type = map(any)
   default = {
     public-subnet-1 : "0"
@@ -13,7 +13,7 @@ variable "public_subnet_cidr" {
   }
 }
 
-variable "private_subnet_cidr" {
+variable "private_subnet" {
   type = map(any)
   default = {
     private-subnet-1 : "0"
