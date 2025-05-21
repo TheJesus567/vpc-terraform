@@ -61,8 +61,27 @@ resource "aws_route_table" "public-route-table" {
 
 }
 
+resource "aws_route_table" "private-route-table" {
+  vpc_id = aws_vpc.myvpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.internet-gw.id // <<<<------ Needs to be updated to use NAT
+  }
+
+  tags = {
+    Name = "private-route-table"
+  }
+}
+
 resource "aws_route_table_association" "public-rt-association" {
   for_each       = var.public_subnet
   subnet_id      = aws_subnet.public-subnets[each.key].id
   route_table_id = aws_route_table.public-route-table.id
+}
+
+resource "aws_route_table_association" "private-rt-association" {
+  for_each       = var.private_subnet
+  subnet_id      = aws_subnet.private-subnets[each.key].id
+  route_table_id = aws_route_table.private-route-table.id
 }
