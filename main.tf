@@ -47,6 +47,27 @@ resource "aws_internet_gateway" "internet-gw" {
   }
 }
 
+resource "aws_eip" "public-ip" {
+  domain     = "vpc"
+  depends_on = [aws_internet_gateway.internet-gw]
+  tags = {
+    Name = "my-public-ip"
+  }
+}
+
+resource "aws_nat_gateway" "nat-gw" {
+  allocation_id = aws_eip.public-ip.id
+  subnet_id     = aws_subnet.public-subnets["public-subnet-1"].id
+
+  tags = {
+    Name = "gw NAT"
+  }
+
+  # To ensure proper ordering, it is recommended to add an explicit dependency
+  # on the Internet Gateway for the VPC.
+  depends_on = [aws_internet_gateway.internet-gw]
+}
+
 resource "aws_route_table" "public-route-table" {
   vpc_id = aws_vpc.myvpc.id
 
@@ -66,7 +87,7 @@ resource "aws_route_table" "private-route-table" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet-gw.id // <<<<------ Needs to be updated to use NAT
+    gateway_id = aws_nat_gateway.nat-gw.id
   }
 
   tags = {
