@@ -60,7 +60,7 @@ resource "aws_nat_gateway" "nat-gw" {
   subnet_id     = aws_subnet.public-subnets["public-subnet-1"].id
 
   tags = {
-    Name = "gw NAT"
+    Name = "my-nat-gateway"
   }
 
   # To ensure proper ordering, it is recommended to add an explicit dependency
