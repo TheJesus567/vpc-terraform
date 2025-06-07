@@ -1,108 +1,29 @@
-# Configure the AWS Provider
-provider "aws" {
-  region = "us-east-1"
-}
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
+  name = "my-vpc"
+  cidr = "10.0.0.0/16"
 
-resource "aws_vpc" "myvpc" {
-  cidr_block = var.cidr
+  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  default_security_group_egress = [
+  {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"         
+    cidr_blocks = "0.0.0.0/0"
+  }
+]
+
+
+  enable_nat_gateway     = true
+  single_nat_gateway     = true
+  one_nat_gateway_per_az = false
 
   tags = {
-    Name      = "myvpc"
-    ManagedBy = "Terraform"
+    Terraform   = "true"
+    Environment = "dev"
   }
-}
-
-resource "aws_subnet" "public-subnets" {
-  for_each          = var.public_subnet
-  cidr_block        = cidrsubnet(var.cidr, 8, each.value + 1)
-  availability_zone = data.aws_availability_zones.available.names[each.value]
-  vpc_id            = aws_vpc.myvpc.id
-
-  tags = {
-    Name = each.key
-  }
-}
-
-resource "aws_subnet" "private-subnets" {
-  for_each          = var.private_subnet
-  cidr_block        = cidrsubnet(var.cidr, 8, each.value + 4)
-  availability_zone = data.aws_availability_zones.available.names[each.value]
-  vpc_id            = aws_vpc.myvpc.id
-
-  tags = {
-    Name = each.key
-  }
-}
-
-resource "aws_internet_gateway" "internet-gw" {
-  vpc_id = aws_vpc.myvpc.id
-
-  tags = {
-    Name      = "my-internet-gateway"
-    ManagedBy = "Terraform"
-  }
-}
-
-resource "aws_eip" "public-ip" {
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.internet-gw]
-  tags = {
-    Name = "my-public-ip"
-  }
-}
-
-resource "aws_nat_gateway" "nat-gw" {
-  allocation_id = aws_eip.public-ip.id
-  subnet_id     = aws_subnet.public-subnets["public-subnet-1"].id
-
-  tags = {
-    Name = "my-nat-gateway"
-  }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
-  depends_on = [aws_internet_gateway.internet-gw]
-}
-
-resource "aws_route_table" "public-route-table" {
-  vpc_id = aws_vpc.myvpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet-gw.id
-  }
-
-  tags = {
-    Name = "public-route-table"
-  }
-
-}
-
-resource "aws_route_table" "private-route-table" {
-  vpc_id = aws_vpc.myvpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_nat_gateway.nat-gw.id
-  }
-
-  tags = {
-    Name = "private-route-table"
-  }
-}
-
-resource "aws_route_table_association" "public-rt-association" {
-  for_each       = var.public_subnet
-  subnet_id      = aws_subnet.public-subnets[each.key].id
-  route_table_id = aws_route_table.public-route-table.id
-}
-
-resource "aws_route_table_association" "private-rt-association" {
-  for_each       = var.private_subnet
-  subnet_id      = aws_subnet.private-subnets[each.key].id
-  route_table_id = aws_route_table.private-route-table.id
 }
