@@ -5,19 +5,11 @@ variable "cidr" {
 }
 
 variable "public_subnet" {
-  type = map(any)
-  default = {
-    public-subnet-1 : "0"
-    public-subnet-2 : "1"
-    public-subnet-3 : "2"
-  }
+  type = list 
+  default = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"] 
 }
 
 variable "private_subnet" {
-  type = map(any)
-  default = {
-    private-subnet-1 : "0"
-    private-subnet-2 : "1"
-    private-subnet-3 : "2"
-  }
+  type = list
+  default = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"] 
 }
